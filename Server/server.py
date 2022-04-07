@@ -4,6 +4,7 @@ from random import *
 #CON PYTHON 3.10 SONO STATI INSERITI I "MATCH" COME GLI SWITCH
 
 def acceptLogin():
+    # Quando si accetta, bisogna prendere la porta del client da dove altri peer prenderanno i file
     alphabet="abcdefghijklmnopqrstuvwxyz"
     sessionID=""
     valid=False
@@ -32,7 +33,6 @@ def acceptLogin():
     
 
 def acceptAdd(packet):
-    #qui il server riceverà il file e lo salverà in una directory specifica
 
     #riceve cmd 4byte, sID 16byte, MD5 32byte,nome file 100byte
     sID=packet[4:20]
@@ -45,7 +45,6 @@ def acceptAdd(packet):
     
     directory="" #3B
 
-    #Per inviare al client il numero di file uguali contenuti nel server nella directory dove sono ospitati
     #si effettua una query SELECT COUNT DISTINCT in base all'MD5
     response="AADD"+directory
     
@@ -62,7 +61,8 @@ def acceptRemove(packet):
     
 def findFile(packet):
     sID=packet[4:20]
-
+    search_string=packet[20:40]
+    filename=packet[40:140]
     #manderà al peer numero di file con MD5 uguale
     #riporterà 
     numfile=0
