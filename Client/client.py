@@ -16,8 +16,10 @@ def calcmd5(fname):
     return hash_md5.hexdigest()
     
 def login(ip, porta):
+    ipsend=ip.ljust(15,"")
+    portsend=porta.ljust(5,"")
     #stringa di risposta
-    response="LOGI"+str(ip)+str(porta)
+    response="LOGI"+ipsend+portsend
     return response
     
 def aggiungi(sessionID):

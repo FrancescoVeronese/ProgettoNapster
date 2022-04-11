@@ -1,10 +1,17 @@
 import socket
 from random import *
+import mysql.connector
+#TESTING DATABASE IN CORSO, PROBLEMI CON MYSQL CONNECTOR E AUTENTICAZIONE AL DB
 
-#CON PYTHON 3.10 SONO STATI INSERITI I "MATCH" COME GLI SWITCH
 
+'''
 def acceptLogin():
     # Quando si accetta, bisogna prendere la porta del client da dove altri peer prenderanno i file
+    IPAddress=packet[4,15] 
+    Port=packet[15,20]
+    
+
+
     alphabet="abcdefghijklmnopqrstuvwxyz"
     sessionID=""
     valid=False
@@ -72,12 +79,18 @@ def findFile(packet):
 
 def acceptLogout(packet):
     sID=packet[4:20]
-    #ELIMINA file dalla directory
     #query SQL che conta i file presenti nel DB con quel sID e li elimina
     numfile=0
     response="ALGO"+str(numfile)
     return response
-
+'''#connessione al database
+mydb=mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="1029384756"
+)
+print(mydb)
+'''
 s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
 s.bind(("",80))
@@ -90,21 +103,23 @@ while True:
     
     #si prendono i primi 4 byte(caratteri) della stringa inviata dal client, che identificano il tipo di comando inviato
     commandAction=packet[0:4]
-
-    match commandAction:
-        case 'LOGI' : 
+    if(commandAction=='LOGI'):
             response=acceptLogin()
             conn.send(response.encode()) #manda al client una stringa di 20 byte al peer 4 cmd, 16 SID #X
-        case 'ADDF':
+    else:
+        if(commandAction=='ADDF'):
             response=acceptAdd(packet)
             conn.send(response.encode()) #risponde con la conferma dell'inserimento nel DB del file,
-                        # e del numero di file con stesso MD5 preesnti
-        case 'DELF':
-            response=acceptRemove(packet)
-            conn.send(response.encode()) #risponde con la conferma della cancellazione del file
-        case 'FIND':
-            response=findFile()
-            conn.send(response.encode())
-        case 'LOGO':
-            response=acceptLogout()
-            conn.send(response.encode())
+            # e del numero di file con stesso MD5 preesnti
+        else:
+            if(commandAction=='DELF'):
+                response=acceptRemove(packet)
+                conn.send(response.encode()) #risponde con la conferma della cancellazione del file
+            else:
+                if(commandAction=='FIND'):
+                    response=findFile()
+                    conn.send(response.encode())
+                else:
+                    if(commandAction=='LOGO'):
+                        response=acceptLogout()
+                        conn.send(response.encode())'''
