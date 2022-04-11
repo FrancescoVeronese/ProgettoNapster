@@ -84,11 +84,7 @@ def acceptLogout(packet):
     response="ALGO"+str(numfile)
     return response
 '''#connessione al database
-mydb=mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="1029384756"
-)
+mydb=mysql.connector.connect(host="localhost",user="ADMIN",password="Root1029384756!",database='NAPSTERDB')
 print(mydb)
 '''
 s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)

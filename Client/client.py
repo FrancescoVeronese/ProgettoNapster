@@ -110,30 +110,33 @@ pid = os.fork()
 while True:
     if pid > 0:
         scelta = input("Scelta azione:\n 1 per Aggiungere un file\n 2 per Rimuovere un file\n 3 per Ricercare un file\n 4 per Scaricare un file\n 5 per fare Logout")
-        match scelta:
-            case '1':
+        if(scelta==1):
                 response = aggiungi(sessionID)
                 s.send(response.encode())
-            case '2':
+        else:  
+            if(scelta==2):
                 response = delete(sessionID)
                 s.send(response.encode())
-            case '3':
-                response = find(sessionID)
-                s.send(response.encode())
-            case '4':
-                '''
-                port = input("Inserisci porta del peer")
-                host = input("Inserisci indirizzo del peer")
-                filename = input("Inserisci nome file")
-                filecode = calcmd5(filename)
-                download(host, port, filecode)
-                response = servdownload(sessionID)
-                s.send(response.encode()) # informo il server dello scaricamento
-                '''
-            case '5':
-                response = logout(sessionID)
-                s.send(response.encode())
-                s.close()
+            else:
+                if(scelta==3):
+                    response = find(sessionID)
+                    s.send(response.encode())
+                else:
+                    if(scelta==4):
+                        '''
+                        port = input("Inserisci porta del peer")
+                        host = input("Inserisci indirizzo del peer")
+                        filename = input("Inserisci nome file")
+                        filecode = calcmd5(filename)
+                        download(host, port, filecode)
+                        response = servdownload(sessionID)
+                        s.send(response.encode()) # informo il server dello scaricamento
+                        '''
+                    else:
+                        if(scelta==5):
+                            response = logout(sessionID)
+                            s.send(response.encode())
+                            s.close()
     else:
         conn, address = s.accept() # connessione con peer richiedente
         
