@@ -1,7 +1,9 @@
 import socket
 from random import *
-import mysql.connector
-#TESTING DATABASE IN CORSO, PROBLEMI CON MYSQL CONNECTOR E AUTENTICAZIONE AL DB
+
+import mysql.connector #mysql non è riconosciuto come modulo, nonostante tutto il necessario sia installato, boh, 
+#cercato anche su internet in ogni angolo, la soluzione che propongono tutti non serve a nulla
+#TESTING DATABASE IN CORSO
 
 
 '''
@@ -84,7 +86,10 @@ def acceptLogout(packet):
     response="ALGO"+str(numfile)
     return response
 '''#connessione al database
-mydb=mysql.connector.connect(host="localhost",user="ADMIN",password="Root1029384756!",database='NAPSTERDB')
+try:
+    mydb=mysql.connector.connect(host="localhost",user="ADMIN",password="Root1029384756!",database='NAPSTERDB',auth_plugin='auth_plug')
+except:
+    print("ERRORE nella connessione al Database Mysql")
 print(mydb)
 '''
 s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
