@@ -1,19 +1,15 @@
 import socket
 from random import *
 
-import mysql.connector #mysql non è riconosciuto come modulo, nonostante tutto il necessario sia installato, boh, 
-#cercato anche su internet in ogni angolo, la soluzione che propongono tutti non serve a nulla
-#TESTING DATABASE IN CORSO
+import mysql.connector 
+#LAVORANDO SULL'AGGIUNTA DEL FILE E LOGIN
 
 
-'''
 def acceptLogin():
-    # Quando si accetta, bisogna prendere la porta del client da dove altri peer prenderanno i file
-    IPAddress=packet[4,15] 
+   
+    IPAddress=packet[4,15]
     Port=packet[15,20]
     
-
-
     alphabet="abcdefghijklmnopqrstuvwxyz"
     sessionID=""
     valid=False
@@ -31,7 +27,13 @@ def acceptLogin():
                     sessionID=sessionID+alphabet[charchooser]
                 else:
                     sessionID=sessionID+alphabet[charchooser].upper()
-        
+        try:
+
+            mydb=mysql.connector.connect(host="localhost",user="francesco",password="1",database="NAPSTERDB")
+            cursor=mydb.cursor()
+            cursor.execute(f"INSERT INTO UTENTE (SID,IP,PORT) VALUES ('{sessionID}','{IPAddress}','{Port}")
+        except:
+            print("ERRORE INSERIMENTO UTENTE NEL DB")
         #una volta creato il sessionID si controlla con una query al DB (tabella utenti),
         # nel caso vi sia già un peer connesso con quel sessionID (valid=false),
         # in tal caso si ricrea l'ID e si ritenta il controllo, se poi
@@ -47,12 +49,19 @@ def acceptAdd(packet):
     sID=packet[4:20]
     MD5=packet[20:52]
     fileName=packet[52:152]
+    try:
+        mydb=mysql.connector.connect(host="localhost",user="francesco",password="1",database="NAPSTERDB")
+        cursor=mydb.cursor()
+        cursor.execute("INSERT INTO ")
 
-    #si aggiunge: nome file, MD5, numero versione (autoincrementante), session ID nel DB (tabella file)
+    except:
+        print("ERRORE nell'aggiunta del file")
+    #si aggiunge: nome file, MD5 session ID nel DB (tabella file)
     #il sessionID presente come chiave esterna serve per eliminare tutti i file presenti nel DB appartenenti a un utente
     #non più connesso
     
     directory="" #3B
+    
 
     #si effettua una query SELECT COUNT DISTINCT in base all'MD5
     response="AADD"+directory
@@ -85,13 +94,14 @@ def acceptLogout(packet):
     numfile=0
     response="ALGO"+str(numfile)
     return response
-'''#connessione al database
-try:
-    mydb=mysql.connector.connect(host="localhost",user="ADMIN",password="Root1029384756!",database='NAPSTERDB',auth_plugin='auth_plug')
+#connessione al database
+try: 
+    mydb=mysql.connector.connect(host="localhost",user="francesco",password="1",database='NAPSTERDB')
+    cursor=mydb.cursor()
 except:
-    print("ERRORE nella connessione al Database Mysql")
-print(mydb)
-'''
+    print("La connessione al Database non ha avuto successo")
+
+
 s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
 s.bind(("",80))
@@ -123,4 +133,4 @@ while True:
                 else:
                     if(commandAction=='LOGO'):
                         response=acceptLogout()
-                        conn.send(response.encode())'''
+                        conn.send(response.encode())

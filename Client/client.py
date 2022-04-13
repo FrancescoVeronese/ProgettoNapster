@@ -1,11 +1,12 @@
 import socket
 import hashlib
 import os
+import random
 
 #INDICAZIONI GENERALI:
 #NON usare cancelletti per riempire posti vuoti in stringhe, lasciare lo spazio vuoto (risolto)
 #La parte di DOWNLOAD va sviluppata dopo il 14/04/2022, per il testing ora è lasciata a commento
-
+#LAVORANDO SULLA RICEZIONE DELLE RISPOSTE DAL SERVER
 
 #calcolo md5 metodo
 def calcmd5(fname):
@@ -16,8 +17,8 @@ def calcmd5(fname):
     return hash_md5.hexdigest()
     
 def login(ip, porta):
-    ipsend=ip.ljust(15,"")
-    portsend=porta.ljust(5,"")
+    ipsend=ip.ljust(15)
+    portsend=porta.ljust(5) #porta da cui il client si metterà in ascolto per ricevere richieste download
     #stringa di risposta
     response="LOGI"+ipsend+portsend
     return response
@@ -27,31 +28,20 @@ def aggiungi(sessionID):
     while(len(nameFile)>100):#accettare solo nomi di file minori di 100 caratteri(byte)
         nameFile = input("Scrivere nome file")
     md5 = calcmd5(nameFile)
-    num=100  #la stringa del nome da inviare è 100 byte
-    chars=len(nameFile) #i caratteri della stringa filename presa in input sono:
-    blanks=num-chars #i caratteri da lasciare vuoti sono:
-    #si crea la stringa vuota da namefile+ posti blanks
-    nameFile_send=nameFile + ''*blanks
-    print(nameFile_send) #per testing
+    nameFile_send=nameFile.ljust(100)
     response="ADDF"+str(sessionID)+str(md5)+str(nameFile_send)
     return response
 def delete(sessionID):
     nameFile = input("Scrivere nome file")
     md5 = calcmd5(nameFile)
-    if (len(nameFile) < 100):
-        t = 100 - len(nameFile)
-        for i in range (0, t):
-            nameFile = "#" + nameFile
+    namefile=namefile.ljust(100)
     response="DELF"+str(sessionID)+str(md5)
     return response
 
 def find(sessionID):
     string = input("Scrivere stringa di ricerca")
-    if (len(string) < 20):
-        t = 20 - len(string)
-        for i in range (0, t):
-            string = "#" + string
-    response="DELF"+str(sessionID)+str(string)
+    string=string.ljust(20)
+    response="FIND"+str(sessionID)+str(string)
     return response
     
 def logout(sessionID):
@@ -99,11 +89,12 @@ s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 s.connect((ip,porta))
 s1 = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 s1.bind((ip, porta))
+listenport=random.randint(50000,60000)
 
-login(ip, porta)
+
+login(ip, listenport)
 logaccept = s.recv(1024).decode()
-for m in range(4, 20):
-    sessionID = sessionID + logaccept[m]
+sessionID=sessionID[4,20]
 
 s1.listen(10)
 pid = os.fork()
@@ -113,10 +104,13 @@ while True:
         if(scelta==1):
                 response = aggiungi(sessionID)
                 s.send(response.encode())
+                #risultato=s.recv(1024).decode()
+
         else:  
             if(scelta==2):
                 response = delete(sessionID)
                 s.send(response.encode())
+                
             else:
                 if(scelta==3):
                     response = find(sessionID)
