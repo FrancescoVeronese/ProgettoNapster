@@ -1,14 +1,15 @@
 import socket
 from random import *
 
-import mysql.connector 
+import mysql.connector
+from requests import Session 
 #LAVORANDO SULL'AGGIUNTA DEL FILE E LOGIN
 
 
 def acceptLogin():
    
-    IPAddress=packet[4,15]
-    Port=packet[15,20]
+    IPAddress=packet[4:15]
+    Port=packet[15:20]
     
     alphabet="abcdefghijklmnopqrstuvwxyz"
     sessionID=""
@@ -27,18 +28,26 @@ def acceptLogin():
                     sessionID=sessionID+alphabet[charchooser]
                 else:
                     sessionID=sessionID+alphabet[charchooser].upper()
+        print(f"IL SID GENERATO è {sessionID}")
         try:
-
-            mydb=mysql.connector.connect(host="localhost",user="francesco",password="1",database="NAPSTERDB")
-            cursor=mydb.cursor()
-            cursor.execute(f"INSERT INTO UTENTE (SID,IP,PORT) VALUES ('{sessionID}','{IPAddress}','{Port}")
+            valid=cursor.execute(f"SELECT IF(SID={sessionID},True,False) FROM UTENTE")
+            if(valid==True):
+                print(f"Il SID è {valid}, invio del SID al client...\n")
+            else:
+                print(f"SID già presente nel DB, generazione di un altro SID...\n")
         except:
-            print("ERRORE INSERIMENTO UTENTE NEL DB")
+            print("ERRORE CONTROLLO SID NEL DATABASE")
+        
+        if(valid==True):
+            try:
+                cursor.execute(f"INSERT INTO UTENTE (SID,IP,PORT) VALUES ('{sessionID}','{IPAddress}','{Port}")
+            except:
+                print("ERRORE INSERIMENTO UTENTE NEL DB\n")
         #una volta creato il sessionID si controlla con una query al DB (tabella utenti),
         # nel caso vi sia già un peer connesso con quel sessionID (valid=false),
         # in tal caso si ricrea l'ID e si ritenta il controllo, se poi
         #si crea un ID non presente nel DB allora valid=true e si esce dal while
-        valid=True
+        
     response="ALGI"+sessionID
     return response
     
