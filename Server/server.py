@@ -1,9 +1,9 @@
 import socket
 from random import *
-
+import sys
 import mysql.connector
 from requests import Session 
-#LAVORANDO SULL'AGGIUNTA DEL FILE E LOGIN
+#ERRORE RIGA 33 "unknown column in 'Field List'"
 
 
 def acceptLogin():
@@ -30,19 +30,22 @@ def acceptLogin():
                     sessionID=sessionID+alphabet[charchooser].upper()
         print(f"IL SID GENERATO è {sessionID}")
         try:
-            valid=cursor.execute(f"SELECT IF(SID={sessionID},True,False) FROM UTENTE")
+            valid=cursor.execute(f"SELECT IF(SID={sessionID},True,False) FROM UTENTE;")
+            print(valid)
             if(valid==True):
                 print(f"Il SID è {valid}, invio del SID al client...\n")
             else:
-                print(f"SID già presente nel DB, generazione di un altro SID...\n")
+                print(f"SID già presente nel DB, generazione di un altro SID...\n")            
         except:
             print("ERRORE CONTROLLO SID NEL DATABASE")
+            sys.exit(1)
         
         if(valid==True):
             try:
                 cursor.execute(f"INSERT INTO UTENTE (SID,IP,PORT) VALUES ('{sessionID}','{IPAddress}','{Port}")
             except:
                 print("ERRORE INSERIMENTO UTENTE NEL DB\n")
+                sys.exit(1)
         #una volta creato il sessionID si controlla con una query al DB (tabella utenti),
         # nel caso vi sia già un peer connesso con quel sessionID (valid=false),
         # in tal caso si ricrea l'ID e si ritenta il controllo, se poi
