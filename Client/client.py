@@ -18,6 +18,7 @@ def calcmd5(fname):
     
 def login(ip, porta):
     ipsend=ip.ljust(15)
+    porta=str(porta)
     portsend=porta.ljust(5) #porta da cui il client si metterà in ascolto per ricevere richieste download
     #stringa di risposta
     response="LOGI"+ipsend+portsend
@@ -81,20 +82,22 @@ def download(serverhost, serverport, filecode):  # funzione per scaricare un fil
             s2.close()
 """
 ip = ""
+remoteip="25.13.127.60"
 porta = 80
 directory = os.getcwd()
 sessionID = ""
 t = 1
 s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-s.connect((ip,porta))
+s.connect((remoteip,porta))
 s1 = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 s1.bind((ip, porta))
 listenport=random.randint(50000,60000)
 
 
-login(ip, listenport)
+response=login(remoteip, listenport)
+s.send(response.encode())
 logaccept = s.recv(1024).decode()
-sessionID=sessionID[4,20]
+sessionID=logaccept[4:20]
 
 s1.listen(10)
 pid = os.fork()
