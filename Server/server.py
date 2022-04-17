@@ -30,7 +30,8 @@ def acceptLogin():
                     sessionID=sessionID+alphabet[charchooser].upper()
         print(f"IL SID GENERATO è {sessionID}")
         try:
-            valid=cursor.execute(f"SELECT IF(SID={sessionID},True,False) FROM UTENTE;")
+            cursor.execute(f"SELECT * FROM UTENTE WHERE SID='{sessionID}';")
+            valid=cursor.fetchall()
             print(valid)
             if(valid==True):
                 print(f"Il SID è {valid}, invio del SID al client...\n")
