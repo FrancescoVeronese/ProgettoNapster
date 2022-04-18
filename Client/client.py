@@ -6,7 +6,6 @@ import random
 #INDICAZIONI GENERALI:
 #NON usare cancelletti per riempire posti vuoti in stringhe, lasciare lo spazio vuoto (risolto)
 #La parte di DOWNLOAD va sviluppata dopo il 14/04/2022, per il testing ora è lasciata a commento
-#LAVORANDO SULLA RICEZIONE DELLE RISPOSTE DAL SERVER
 
 #calcolo md5 metodo
 def calcmd5(fname):
@@ -97,7 +96,9 @@ listenport=random.randint(50000,60000)
 response=login(remoteip, listenport)
 s.send(response.encode())
 logaccept = s.recv(1024).decode()
+print(f"Ricevuto {logaccept}")
 sessionID=logaccept[4:20]
+print(f"Il sessionID assegnato è {sessionID}")
 
 s1.listen(10)
 pid = os.fork()
@@ -107,7 +108,7 @@ while True:
         if(scelta==1):
                 response = aggiungi(sessionID)
                 s.send(response.encode())
-                #risultato=s.recv(1024).decode()
+                risultato=s.recv(1024).decode()
 
         else:  
             if(scelta==2):

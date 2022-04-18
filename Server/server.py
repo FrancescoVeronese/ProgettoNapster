@@ -5,52 +5,53 @@ import mysql.connector
 from requests import Session 
 #ERRORE RIGA 33 "unknown column in 'Field List'"
 
-
+def dataSender(send):
+    conn.send(str(send).encode())
 def acceptLogin():
    
     IPAddress=packet[4:15]
     Port=packet[15:20]
     
     alphabet="abcdefghijklmnopqrstuvwxyz"
-    sessionID=""
-    valid=False
-    while(valid==False):
-        #generare una stringa di 16 caratteri con valori alfanumerici
-        for x in range(0,16):
-            choosetype=randint(0,1)
-            if(choosetype==0):
-                numberchooser=randint(0,9)
-                sessionID=sessionID+str(numberchooser)
+    sessionID="" 
+    #generare una stringa di 16 caratteri con valori alfanumerici
+    for x in range(0,16):
+        choosetype=randint(0,1)
+        if(choosetype==0):
+            numberchooser=randint(0,9)
+            sessionID=sessionID+str(numberchooser)
+        else:
+            charchooser=randint(0,25)
+            sizechooser=randint(0,1)
+            if(sizechooser==0):
+                sessionID=sessionID+alphabet[charchooser]
             else:
-                charchooser=randint(0,25)
-                sizechooser=randint(0,1)
-                if(sizechooser==0):
-                    sessionID=sessionID+alphabet[charchooser]
-                else:
-                    sessionID=sessionID+alphabet[charchooser].upper()
-        print(f"IL SID GENERATO è {sessionID}")
+                sessionID=sessionID+alphabet[charchooser].upper()
+    print(f"IL SID GENERATO è {sessionID}\n")
+    try:
+        valori=(sessionID,IPAddress,Port)
+        cursor.execute(f"INSERT INTO UTENTE(SID,IP,PORT) VALUES (%s,%s,%s)",valori)
+        mydb.commit()
+    except BaseException as errore: #Tutte le eccezioni ereditano da Baseexception
+        print("ERRORE:"+errore.msg)
+        sessionID="0000000000000000"    
+        ''' Al posto di cercare il numero di utenti con quel SID o altro, il metodo pià semplice è lasciare un
+        eccezione, che se trovata, ritorna tutti zero al client
         try:
-            cursor.execute(f"SELECT * FROM UTENTE WHERE SID='{sessionID}';")
-            valid=cursor.fetchall()
-            print(valid)
-            if(valid==True):
-                print(f"Il SID è {valid}, invio del SID al client...\n")
+            cursor.execute(f"SELECT COUNT(*) FROM UTENTE WHERE SID='{sessionID}'") 
+            queryresult=cursor.fetchall()[0][0]
+            print(f"Il SID creato è presente nel DB {queryresult} volte")
+            if(int(queryresult)==0):
+                print(f"Il SID non è presente nel DB, invio del SID al client...\n")
+                valid=True
+                valori=(sessionID,IPAddress,Port)
+                cursor.execute("INSERT INTO UTENTE (SID,IP,PORT) VALUES (%s,%s,%s)",valori)
+                mydb.commit()
             else:
-                print(f"SID già presente nel DB, generazione di un altro SID...\n")            
+                print(f"SID già presente nel DB, generazione di un altro SID...\n")       
         except:
-            print("ERRORE CONTROLLO SID NEL DATABASE")
-            sys.exit(1)
-        
-        if(valid==True):
-            try:
-                cursor.execute(f"INSERT INTO UTENTE (SID,IP,PORT) VALUES ('{sessionID}','{IPAddress}','{Port}")
-            except:
-                print("ERRORE INSERIMENTO UTENTE NEL DB\n")
-                sys.exit(1)
-        #una volta creato il sessionID si controlla con una query al DB (tabella utenti),
-        # nel caso vi sia già un peer connesso con quel sessionID (valid=false),
-        # in tal caso si ricrea l'ID e si ritenta il controllo, se poi
-        #si crea un ID non presente nel DB allora valid=true e si esce dal while
+            print("ERRORE CONTROLLO/INSERIMENTO SID NEL DATABASE")
+            sessionID='0000000000000000' '''
         
     response="ALGI"+sessionID
     return response
@@ -65,19 +66,20 @@ def acceptAdd(packet):
     try:
         mydb=mysql.connector.connect(host="localhost",user="francesco",password="1",database="NAPSTERDB")
         cursor=mydb.cursor()
-        cursor.execute("INSERT INTO ")
-
-    except:
-        print("ERRORE nell'aggiunta del file")
-    #si aggiunge: nome file, MD5 session ID nel DB (tabella file)
+        cursor.execute("INSERT INTO FILE(MD5,NAME) VALUES(%s,%s)",MD5,fileName)
+        mydb.commit()
+        cursor.execute("INSERT INTO ARCHIVIO(SID_UTENTE,MD5_FILE) VALUES(%s,%s",sID,MD5)
+        mydb.commit()
+        print(f"File {fileName}, con MD5 {MD5} del peer {sID} inserito nel DB\n")
+    except mysql.connector.Error as errore:
+        print("ERRORE nell'aggiunta del file:"+errore.msg)
+    
+    cursor.execute("SELECT COUNT (SID) FROM ARCHIVIO WHERE MD5=%s",MD5) #si conta quante volte il file sia presente nel DB
+    copy=cursor.fetchall()[0][0]
+    copy=copy.ljust(3)
     #il sessionID presente come chiave esterna serve per eliminare tutti i file presenti nel DB appartenenti a un utente
     #non più connesso
-    
-    directory="" #3B
-    
-
-    #si effettua una query SELECT COUNT DISTINCT in base all'MD5
-    response="AADD"+directory
+    response="AADD"+copy
     
     return response
 
@@ -129,21 +131,26 @@ while True:
     commandAction=packet[0:4]
     if(commandAction=='LOGI'):
             response=acceptLogin()
-            conn.send(response.encode()) #manda al client una stringa di 20 byte al peer 4 cmd, 16 SID #X
+            print(f"La risposta al client è {response}")
+            dataSender(response)#manda al client una stringa di 20 byte al peer 4 cmd, 16 SID #X
     else:
         if(commandAction=='ADDF'):
             response=acceptAdd(packet)
-            conn.send(response.encode()) #risponde con la conferma dell'inserimento nel DB del file,
+            print(f"La risposta al client è {response}")
+            dataSender(response) #risponde con la conferma dell'inserimento nel DB del file,
             # e del numero di file con stesso MD5 preesnti
         else:
             if(commandAction=='DELF'):
                 response=acceptRemove(packet)
-                conn.send(response.encode()) #risponde con la conferma della cancellazione del file
+                print(f"La risposta al client è {response}")
+                dataSender(response) #risponde con la conferma della cancellazione del file
             else:
                 if(commandAction=='FIND'):
                     response=findFile()
-                    conn.send(response.encode())
+                    print(f"La risposta al client è {response}")
+                    dataSender(response)
                 else:
                     if(commandAction=='LOGO'):
                         response=acceptLogout()
-                        conn.send(response.encode())
+                        print(f"La risposta al client è {response}")
+                        dataSender(response)
