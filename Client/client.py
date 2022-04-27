@@ -175,8 +175,6 @@ def downloadFile(sessionID,md5,peerIP,peerPORT,localdir):
         peer.connect((peerIP,int(peerPORT)))
     except:
         print("il server non è raggiungibile, riprova più tardi")
-        
-        return
     peer.send(pkt.encode())
     peer.recv(4)
     pid=os.fork()
