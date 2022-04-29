@@ -81,13 +81,13 @@ def fileSend(socket,file):
     pkt=""  #singolo chunk
     for n in range(0,numchunk): #i chunk da mandare sono n
         pkt+="04096"  #invia la grandezza del chunk
-        pkt+=os.read(fd,4096).decode() #invia le informazioni del chunk stesso
-        socket.send(pkt.encode())
+        pkt+=os.read(fd,4096) #invia le informazioni del chunk stesso
+        socket.send(pkt)
         pkt=""
     if(lastchunk!=0): #l'ultimo chunk con grandezza minore a 4096 viene mandato alla fine
         pkt+=adjustLength(str(lastchunk),5)
-        pkt+=os.read(fd,4096).decode()
-        socket.send(pkt.encode())
+        pkt+=os.read(fd,4096)
+        socket.send(pkt)
     os.close(fd)
 
 def login(localport): #finito

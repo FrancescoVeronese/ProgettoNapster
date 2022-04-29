@@ -36,7 +36,8 @@ def acceptLogin():
                 sessionID=sessionID+alphabet[charchooser].upper()
     print(f"IL SID GENERATO è {sessionID}\n")
     try:
-        valori=(sessionID,IPAddress,Port)
+        valori=(sessionID,IPAddress,str(Port))
+        cursor=mydb.cursor()
         cursor.execute(f"INSERT INTO UTENTE(SID,IP,PORT) VALUES (%s,%s,%s)",valori)
         mydb.commit()
     except BaseException as errore: #Tutte le eccezioni ereditano da Baseexception
@@ -55,15 +56,14 @@ def acceptAdd(packet):
     try:
         mydb=mysql.connector.connect(host="localhost",user="francesco",password="1",database="NAPSTERDB")
         cursor=mydb.cursor()
-        cursor.execute("INSERT INTO FILE(MD5,NAME) VALUES(%s,%s)",MD5,fileName)
-        mydb.commit()
-        cursor.execute("INSERT INTO ARCHIVIO(SID_UTENTE,MD5_FILE) VALUES(%s,%s",sID,MD5)
+        info=(MD5,fileName,sID)
+        cursor.execute("INSERT INTO FILE(MD5,NOME,SID) VALUES(%s,%s,%s)",info)
         mydb.commit()
         print(f"File {fileName}, con MD5 {MD5} del peer {sID} inserito nel DB\n")
     except mysql.connector.Error as errore:
         print("ERRORE nell'aggiunta del file:"+errore.msg)
     
-    cursor.execute("SELECT COUNT (SID) FROM ARCHIVIO WHERE MD5=%s",MD5) #si conta quante volte il file sia presente nel DB
+    cursor.execute("SELECT COUNT (SID) FROM FILE WHERE MD5=%s",MD5) #si conta quante volte il file sia presente nel DB
     copy=cursor.fetchall()
     copy=Resize(str(copy[0][0]),3)
     #il sessionID presente come chiave esterna serve per eliminare tutti i file presenti nel DB appartenenti a un utente
@@ -74,6 +74,14 @@ def acceptAdd(packet):
 def acceptRemove(packet):
     sID=packet[4:20]
     MD5=packet[20:52]
+
+    removeinfo=(sID,MD5)
+    try:
+        cursor=mydb.cursor()
+        cursor.execute("DELETE FROM FILE WHERE ID_UTENTE=%s AND FILE=%s",removeinfo)
+        mydb.commit()
+    except BaseException as err:
+        print("Errore cancellazione file: %s",err.msg)
     #rimuove dalla tabella file, i record che hanno session id=sID e MD5=MD5
     directory="" #3B
     response="ADEL"+directory
@@ -83,7 +91,12 @@ def findFile(packet):
     sID=packet[4:20]
     search_string=packet[20:40]
     filename=packet[40:140]
+
     #manderà al peer numero di file con MD5 uguale
+    
+
+
+
     #riporterà 
     numfile=0
     #invia al peer gli MD5 dei file con nome file che comprende il nome inviato dal peer stesso
@@ -93,8 +106,24 @@ def findFile(packet):
 def acceptLogout(packet):
     sID=packet[4:20]
     #query SQL che conta i file presenti nel DB con quel sID e li elimina
-    numfile=0
-    response="ALGO"+str(numfile)
+    filenum=0
+    try:
+        cursor=mydb.cursor()
+        cursor.execute("SELECT COUNT(SID) FROM FILE WHERE ID_UTENTE=%s",sID)
+        filenum=cursor.fetchall()
+        filenum=Resize(str(filenum[0][0]),3)
+
+        cursor=mydb.cursor()
+        cursor.execute("DELETE FROM FILE WHERE ID_UTENTE=%s",sID)
+        mydb.commit()
+
+        cursor=mydb.cursor()
+        cursor.execute("DELETE FROM UTENTE WHERE SID=%s",sID)
+        mydb.commit()
+    except BaseException as error:
+        print("ERRORE NEL LOGOUT"+error.msg)
+
+    response="ALGO"+str(filenum)
     return response
 #connessione al database
 try: 
