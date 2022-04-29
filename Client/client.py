@@ -43,7 +43,7 @@ def MD5generator(filename):
             hash_md5.update(chunk)
     return hash_md5.hexdigest().upper()
 
-def localServer(localport,fileList):
+def localServer(localport,fileNameList,fileMD5List):
     locserver=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     locserver.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     locserver.bind(("",int(localport)))
@@ -56,10 +56,10 @@ def localServer(localport,fileList):
             verb=request[0:4]
             if(verb=="RETR"):
                 MD5=request[4:36]
-                for file in fileList:
-                    if(MD5==fileList[file,file]):
+                for file in fileMD5List:
+                    if(MD5==file):
                         print("Il file è stato trovato\n")
-                        fileSend(peer,fileList[file,file]) #invio file nella socket con peer del file con MD5 corrispondente
+                        fileSend(peer,file) #invio file nella socket con peer del file con MD5 corrispondente
                     else:
                         print("File non esistente\n")
                         response="ARET000000"
@@ -212,15 +212,17 @@ signal.signal(signal.SIGINT, conn_close) #nel caso di pressione ctrl+c si chiude
 
 directory = os.listdir('.') #file nella directory locale del programma client
 print(directory)
- #lista bidimensionale di nome file e suo MD5
-fileList=[]
+ 
+fileNameList=[]
+fileMD5List=[]
 for filename in directory:
     
-    fileList.append(filename,MD5generator(filename))
+    fileNameList.append(filename)
+    fileMD5List.append(MD5generator(filename))
 
 #creazione thread che controlla la parte server del client
 
-server_client=threading.Thread(target=localServer,args=(listenport,fileList)) 
+server_client=threading.Thread(target=localServer,args=(listenport,fileNameList,fileMD5List)) 
 server_client.start()
 
 
