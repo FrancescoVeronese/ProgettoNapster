@@ -38,7 +38,7 @@ def acceptLogin():
     try:
         valori=(sessionID,IPAddress,str(Port))
         cursor=mydb.cursor()
-        cursor.execute(f"INSERT INTO UTENTE(SID,IP,PORT) VALUES (%s,%s,%s)",valori)
+        cursor.execute("INSERT INTO UTENTE(SID,IP,PORT) VALUES (%s,%s,%s)",valori)
         mydb.commit()
     except BaseException as errore: #Tutte le eccezioni ereditano da Baseexception
         print("ERRORE:"+errore.msg)
@@ -65,7 +65,7 @@ def acceptAdd(packet):
     
     cursor.execute("SELECT COUNT (SID) FROM FILE WHERE MD5=%s",MD5) #si conta quante volte il file sia presente nel DB
     copy=cursor.fetchall()
-    copy=Resize(str(copy[0][0]),3)
+    copy=str(copy[0][0])
     #il sessionID presente come chiave esterna serve per eliminare tutti i file presenti nel DB appartenenti a un utente
     #non più connesso
     response="AADD"+copy
@@ -111,7 +111,7 @@ def acceptLogout(packet):
         cursor=mydb.cursor()
         cursor.execute("SELECT COUNT(SID) FROM FILE WHERE ID_UTENTE=%s",sID)
         filenum=cursor.fetchall()
-        filenum=Resize(str(filenum[0][0]),3)
+        filenum=str(filenum[0][0])
 
         cursor=mydb.cursor()
         cursor.execute("DELETE FROM FILE WHERE ID_UTENTE=%s",sID)
