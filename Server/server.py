@@ -1,3 +1,4 @@
+import ipaddress
 import socket
 from random import *
 import sys
@@ -5,19 +6,13 @@ import mysql.connector
 from requests import Session 
 
 
-#aggiunge n 0 prima della stringa data come parametro fino ad avere una lunghezza uguale a dim
-def Resize(stringa, dim):
-    tmp=""
-    for n in range(0,dim-len(stringa)):
-       tmp+="0"
-    tmp+=stringa
-    return tmp
+
 def dataSender(send):
     conn.send(str(send).encode())
 def acceptLogin():
    
-    IPAddress=packet[4:15]
-    Port=packet[15:20]
+    IPAddress=packet[4:19]
+    Port=packet[19:24]
     
     alphabet="abcdefghijklmnopqrstuvwxyz"
     sessionID="" 
@@ -36,10 +31,12 @@ def acceptLogin():
                 sessionID=sessionID+alphabet[charchooser].upper()
     print(f"IL SID GENERATO è {sessionID}\n")
     try:
-        valori=(sessionID,IPAddress,str(Port))
+        valori=(sessionID,str(IPAddress),str(Port))
         cursor=mydb.cursor()
         cursor.execute("INSERT INTO UTENTE(SID,IP,PORT) VALUES (%s,%s,%s)",valori)
         mydb.commit()
+        print(IPAddress)
+        print("\n"+Port)
     except BaseException as errore: #Tutte le eccezioni ereditano da Baseexception
         print("ERRORE:"+errore.msg)
         sessionID="0000000000000000"
@@ -57,13 +54,13 @@ def acceptAdd(packet):
         mydb=mysql.connector.connect(host="localhost",user="francesco",password="1",database="NAPSTERDB")
         cursor=mydb.cursor()
         info=(MD5,fileName,sID)
-        cursor.execute("INSERT INTO FILE(MD5,NOME,SID) VALUES(%s,%s,%s)",info)
+        cursor.execute("INSERT INTO FILE(MD5,NOME,ID_UTENTE) VALUES(%s,%s,%s)",info)
         mydb.commit()
         print(f"File {fileName}, con MD5 {MD5} del peer {sID} inserito nel DB\n")
     except mysql.connector.Error as errore:
         print("ERRORE nell'aggiunta del file:"+errore.msg)
     
-    cursor.execute("SELECT COUNT (SID) FROM FILE WHERE MD5=%s",MD5) #si conta quante volte il file sia presente nel DB
+    cursor.execute("SELECT COUNT (ID_UTENTE) FROM FILE WHERE MD5=%s",MD5) #si conta quante volte il file sia presente nel DB
     copy=cursor.fetchall()
     copy=str(copy[0][0])
     #il sessionID presente come chiave esterna serve per eliminare tutti i file presenti nel DB appartenenti a un utente
