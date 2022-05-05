@@ -35,7 +35,7 @@ def acceptLogin(): #OK
         cursor=mydb.cursor()
         cursor.execute("INSERT INTO UTENTE(SID,IP,PORT) VALUES (%s,%s,%s)",valori)
         mydb.commit()
-        print("Utente %s connesso, da porta %s\n",IPAddress,Port)
+        print(f"Utente %s connesso, da porta %s\n",IPAddress,Port)
     except BaseException as errore: #Tutte le eccezioni ereditano da Baseexception
         print("ERRORE:"+errore.msg)
         sessionID="0000000000000000"
@@ -55,7 +55,8 @@ def acceptAdd(packet): #OK#
         info=(MD5,fileName,sID)
         cursor.execute("INSERT INTO FILE(MD5,NOME,ID_UTENTE) VALUES(%s,%s,%s)",info)
         mydb.commit()
-        print(f"Il File: {fileName}, con MD5 {MD5} del peer {sID} inserito nel DB\n")
+        prettyfilename=fileName.strip()
+        print(f"Il File: {prettyfilename}, con MD5 {MD5} del peer {sID} inserito nel DB\n")
     except mysql.connector.Error as errore:
         print("ERRORE nell'aggiunta del file:"+errore.msg)
     
@@ -93,18 +94,43 @@ def acceptRemove(packet):#OK
 def findFile(packet):
     sID=packet[4:20]
     search_string=packet[20:40]
-    filename=packet[40:140]
-
-    #manderà al peer numero di file con MD5 uguale
     
+    filenum=0 #file trovati
     
+    #manderà al peer numero di file con stringa compresa nei nomi di file nel DB
+    try:
+        cursor=mydb.cursor()
+        #strip rimuove gli spazi bianchi prima e dopo la stringa
+        search_string=search_string.strip()
+        search_string="%"+search_string+"%"
+        params=(search_string,)
+        cursor.execute("SELECT COUNT(*) FROM FILE WHERE NOME LIKE %s",params)
+        filenum=cursor.fetchall()
+        filenum=str(filenum[0][0]).ljust(3)
+    except BaseException as err:
+        print("ERRORE calcolo numero file per ricerca:%s",err.msg)
+    firstpacket="AFIN"+filenum
+    print(firstpacket)
+    dataSender(firstpacket) #invia al client quante volte riceverà info sui file
 
+    try:
+        cursor=mydb.cursor()
+        cursor.execute("SELECT FILE.MD5,FILE.NOME,UTENTE.IP,UTENTE.PORT FROM FILE INNER JOIN UTENTE ON FILE.ID_UTENTE=UTENTE.SID WHERE FILE.NOME LIKE %s",params)
+        datatable=cursor.fetchall()
+        for riga in datatable:
+            fileMD5=str(riga[0]).ljust(32)
+            filename=str(riga[1]).ljust(100)  
+            userip=str(riga[2]).ljust(15)
+            userport=str(riga[3]).ljust(5)
 
-    #riporterà 
-    numfile=0
-    #invia al peer gli MD5 dei file con nome file che comprende il nome inviato dal peer stesso
-    response=""
-    return response
+            fileinfoquery=fileMD5+filename+userip+userport #stringa da 152B
+            print(fileinfoquery)
+            dataSender(fileinfoquery)
+
+    except BaseException as erro:
+        print(erro.msg)
+    
+    return 0
 
 def acceptLogout(packet): #OK
     #Conta i file da eliminare dell'utente che fa logout
@@ -168,9 +194,7 @@ while True:
                 dataSender(response) #risponde con la conferma della cancellazione del file
             else:
                 if(commandAction=='FIND'):
-                    response=findFile()
-                    print(f"La risposta al client è {response}")
-                    dataSender(response)
+                    response=findFile(packet)
                 else:
                     if(commandAction=='LOGO'):
                         response=acceptLogout(packet)
