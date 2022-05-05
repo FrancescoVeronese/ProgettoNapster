@@ -10,9 +10,9 @@ import hashlib
 
 
 
-
 def conn_close(signal,frame):
     logout(sessionID)
+
 
 def thisHost():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -20,6 +20,12 @@ def thisHost():
     ip=s.getsockname()[0]
     s.close()
     return str(ip)
+def adjustLength(stringa, dim):
+    tmp=""
+    for n in range(0,dim-len(stringa)):
+        tmp+="0"
+        tmp+=stringa
+    return tmp
 
 def MD5generator(filename):
     hash_md5 = hashlib.md5()
@@ -76,9 +82,12 @@ def fileSend(socket,file):
     os.close(fd)
 
 def login(localport): #finito
+    localport=str(localport)#porta da cui il client si metterà in ascolto per ricevere richieste download
     localip=thisHost().ljust(15)
     #stringa di risposta
     response="LOGI"+localip+localport
+    print(localip)
+    print(localport)
     servcon=dataSender(remoteip,80,response) #invio stringa login
     packet=servcon.recv(1024).decode()
     return packet
@@ -90,7 +99,7 @@ def logout(sessionID):
     logoutstring=servcon.recv(1024).decode()
     verb=logoutstring[0:4]
     filenum=logoutstring[4:7] #numero di file rimossi
-    print(verb+"I file rimossi dal DB del server sono"+filenum)
+    print("\n"+verb+" I file rimossi dal DB del server sono"+filenum)
     print("LOGOUT EFFETTUATO")
     os.abort() #chiusura processo
 
@@ -106,9 +115,9 @@ def dataSender(serverip,serverport,data): #finito
     return servcon
 
 def addFile(sessionID):
-    nameFile = input("Scrivere nome file")
+    nameFile = input("Scrivere nome file ")
     while(len(nameFile)>100):#accettare solo nomi di file minori di 100 caratteri(byte)
-        nameFile = input("Scrivere nome file")
+        nameFile = input("Scrivere nome file ")
     md5 = MD5generator(nameFile)
     nameFile_send=nameFile.ljust(100)
     addstring="ADDF"+str(sessionID)+str(md5)+str(nameFile_send)
@@ -116,20 +125,20 @@ def addFile(sessionID):
     servstring=servcon.recv(1024).decode()
     verb=servstring[0:4]
     filenum=servstring[4:7] #versioni del file presenti nel DB con stesso MD5
-    print("Il numero di file inseriti con stesso MD5 è %s",filenum)
+    print(verb, "Il numero di file inseriti con stesso MD5 è ",filenum)
     return addstring
 
 def delFile(sessionID):
-    nameFile = input("Scrivere nome file")
+    nameFile = input("Scrivere nome file ")
     while(len(nameFile)>100):#accettare solo nomi di file minori di 100 caratteri(byte)
-        nameFile = input("Scrivere nome file")
+        nameFile = input("Scrivere nome file ")
     md5 = MD5generator(nameFile)
     delstring="DELF"+str(sessionID)+str(md5)
     servcon=dataSender(remoteip,80,delstring) #aggiunta al server
     servstring=servcon.recv(1024).decode()
     verb=servstring[0:4]
     filenum=servstring[4:7] #quante versioni del file erano presenti nel DB
-    print("Il numero di file inseriti con stesso MD5 è %s",filenum)
+    print(verb,"Il numero di file eliminati con stesso MD5 è",filenum)
     return delstring
 
 def searchFile(sessionID):
@@ -140,8 +149,9 @@ def searchFile(sessionID):
     searchpkt="FIND"+sessionID+searchString
     servcon=dataSender(remoteip,80,searchpkt) #invio ricerca file
     servstring=servcon.recv(7).decode() #il verbo e il numero di file con searchstring
-    numfile=int(servstring[4,7])
-    for n in numfile: #ogni singolo file
+    numfile=int(servstring[4:7])
+
+    for n in range(0,numfile): #ogni singolo file
         fileInfo=servcon.recv(152) #32 md5,100 filename, 15 ip, 5 porta
         md5=fileInfo[0:32]
         filename=fileInfo[32:132]
@@ -149,16 +159,16 @@ def searchFile(sessionID):
         port=fileInfo[147:152]
         peer=(ipAddress,port,filename,md5)
         print("L'utente %s:%s,\n ha il file con nome:%s e MD5 %s",peer)
-
+    return 0
 def downloadFile(sessionID,md5,peerIP,peerPORT,localdir):
-    print("Inserisci il nome del file da salvare")
+    print("Inserisci il nome del file da salvare ")
     fileName=str(input())
     pkt="RETR"+md5
     peer = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     try:
         peer.connect((peerIP,int(peerPORT)))
     except:
-        print("il server non è raggiungibile, riprova più tardi")
+        print("il server non è raggiungibile, riprova più tardi\n")
     peer.send(pkt.encode())
     peer.recv(4)
     pid=os.fork()
@@ -173,7 +183,7 @@ def downloadFile(sessionID,md5,peerIP,peerPORT,localdir):
             stream=peer.recv(int(peer.recv(5).decode()))
             os.write(fd,stream)
         os.close(fd)
-        peer2=dataSender(remoteip,80,"RREG"+sessionID+md5+peerIP+adjustLength(str(peerPORT),5))
+        peer2=dataSender(remoteip,80,"RREG"+sessionID+md5+peerIP)#alla fine adjustLength(str(peerPORT),5)
         peer2.recv(4)
         print(f"il file è stato scaricato {int(peer2.recv(5).decode())} volte")
         peer2.close()
@@ -211,7 +221,7 @@ server_client.start()
 
 
 while True:
-    scelta=int(input("Inserire\n: 0 per LOGOUT\n 1 per Aggiunta file\n 2 per Rimozione file\n 3 per Ricerca\n 4 per Download\n"))
+    scelta=int(input("Inserire:\n 0 per LOGOUT\n 1 per Aggiunta file\n 2 per Rimozione file\n 3 per Ricerca\n 4 per Download\n"))
     if(scelta==0):
         logout(sessionID)
     else:
