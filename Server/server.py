@@ -9,7 +9,7 @@ from requests import Session
 
 def dataSender(send):
     conn.send(str(send).encode())
-def acceptLogin():
+def acceptLogin(): #OK
    
     IPAddress=packet[4:19]
     Port=packet[19:24]
@@ -35,8 +35,7 @@ def acceptLogin():
         cursor=mydb.cursor()
         cursor.execute("INSERT INTO UTENTE(SID,IP,PORT) VALUES (%s,%s,%s)",valori)
         mydb.commit()
-        print(IPAddress)
-        print("\n"+Port)
+        print("Utente %s connesso, da porta %s\n",IPAddress,Port)
     except BaseException as errore: #Tutte le eccezioni ereditano da Baseexception
         print("ERRORE:"+errore.msg)
         sessionID="0000000000000000"
@@ -45,7 +44,7 @@ def acceptLogin():
     return response
     
 
-def acceptAdd(packet):
+def acceptAdd(packet): #OK#
     #riceve cmd 4byte, sID 16byte, MD5 32byte,nome file 100byte
     sID=packet[4:20]
     MD5=packet[20:52]
@@ -56,11 +55,11 @@ def acceptAdd(packet):
         info=(MD5,fileName,sID)
         cursor.execute("INSERT INTO FILE(MD5,NOME,ID_UTENTE) VALUES(%s,%s,%s)",info)
         mydb.commit()
-        print(f"File {fileName}, con MD5 {MD5} del peer {sID} inserito nel DB\n")
+        print(f"Il File: {fileName}, con MD5 {MD5} del peer {sID} inserito nel DB\n")
     except mysql.connector.Error as errore:
         print("ERRORE nell'aggiunta del file:"+errore.msg)
     
-    MD5tupla=(MD5)
+    MD5tupla=(MD5,)
     cursor.execute("SELECT COUNT(*) FROM FILE WHERE MD5=%s",MD5tupla) #si conta quante volte il file sia presente nel DB
     copy=cursor.fetchall()
     copy=str(copy[0][0])
@@ -69,19 +68,25 @@ def acceptAdd(packet):
     response="AADD"+copy
     return response
 
-def acceptRemove(packet):
+def acceptRemove(packet):#OK
     sID=packet[4:20]
     MD5=packet[20:52]
 
     removeinfo=(sID,MD5)
     try:
         cursor=mydb.cursor()
-        cursor.execute("DELETE FROM FILE WHERE ID_UTENTE=%s AND FILE=%s",removeinfo)
+        cursor.execute("SELECT COUNT(*) FROM FILE WHERE ID_UTENTE=%s AND MD5=%s",removeinfo)
+        deletedfiles=cursor.fetchall()
+        directory=str(deletedfiles[0][0]).ljust(3)
+    except BaseException as erro:
+        print("Errore calcolo numero file cancellati: %s",erro.msg)
+
+    try:
+        cursor=mydb.cursor()
+        cursor.execute("DELETE FROM FILE WHERE ID_UTENTE=%s AND MD5=%s",removeinfo)
         mydb.commit()
     except BaseException as err:
         print("Errore cancellazione file: %s",err.msg)
-    #rimuove dalla tabella file, i record che hanno session id=sID e MD5=MD5
-    directory="" #3B
     response="ADEL"+directory
     return response
     
@@ -101,27 +106,30 @@ def findFile(packet):
     response=""
     return response
 
-def acceptLogout(packet):
+def acceptLogout(packet): #OK
+    #Conta i file da eliminare dell'utente che fa logout
+    #cancella i file dell'utente in questione
+    #cancella l'utente dal DB
     sID=packet[4:20]
-    #query SQL che conta i file presenti nel DB con quel sID e li elimina
     filenum=0
     try:
+        sIDtupla=(sID,)
         cursor=mydb.cursor()
-        cursor.execute("SELECT COUNT(SID) FROM FILE WHERE ID_UTENTE=%s",sID)
+        cursor.execute("SELECT COUNT(*) FROM FILE WHERE ID_UTENTE=%s",sIDtupla)
         filenum=cursor.fetchall()
-        filenum=str(filenum[0][0])
+        filenum=str(filenum[0][0]).ljust(3)
 
         cursor=mydb.cursor()
-        cursor.execute("DELETE FROM FILE WHERE ID_UTENTE=%s",sID)
+        cursor.execute("DELETE FROM FILE WHERE ID_UTENTE=%s",sIDtupla)
         mydb.commit()
 
         cursor=mydb.cursor()
-        cursor.execute("DELETE FROM UTENTE WHERE SID=%s",sID)
+        cursor.execute("DELETE FROM UTENTE WHERE SID=%s",sIDtupla)
         mydb.commit()
     except BaseException as error:
         print("ERRORE NEL LOGOUT"+error.msg)
 
-    response="ALGO"+str(filenum)
+    response="ALGO"+filenum
     return response
 #connessione al database
 try: 
@@ -165,6 +173,6 @@ while True:
                     dataSender(response)
                 else:
                     if(commandAction=='LOGO'):
-                        response=acceptLogout()
+                        response=acceptLogout(packet)
                         print(f"La risposta al client è {response}")
                         dataSender(response)
