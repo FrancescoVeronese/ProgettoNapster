@@ -10,18 +10,9 @@ import hashlib
 
 
 
+
 def conn_close(signal,frame):
     logout(sessionID)
-
-def ipSetter(ip):
-    ip=ip.split(".")
-    for n in range(0,len(ip)):
-        group=""
-        for i in range(0,3-len(ip[n])):
-            group+="0"
-        group+=ip[n]
-        ip[n]=group
-    return ".".join(ip)
 
 def thisHost():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -29,12 +20,6 @@ def thisHost():
     ip=s.getsockname()[0]
     s.close()
     return str(ip)
-def adjustLength(stringa, dim):
-        tmp=""
-        for n in range(0,dim-len(stringa)):
-            tmp+="0"
-        tmp+=stringa
-        return tmp
 
 def MD5generator(filename):
     hash_md5 = hashlib.md5()
@@ -91,8 +76,7 @@ def fileSend(socket,file):
     os.close(fd)
 
 def login(localport): #finito
-    localport=adjustLength(str(localport),5)#porta da cui il client si metterà in ascolto per ricevere richieste download
-    localip=ipSetter(thisHost())
+    localip=thisHost().ljust(15)
     #stringa di risposta
     response="LOGI"+localip+localport
     servcon=dataSender(remoteip,80,response) #invio stringa login
@@ -189,7 +173,7 @@ def downloadFile(sessionID,md5,peerIP,peerPORT,localdir):
             stream=peer.recv(int(peer.recv(5).decode()))
             os.write(fd,stream)
         os.close(fd)
-        peer2=dataSender(remoteip,80,"RREG"+sessionID+md5+ipSetter(peerIP)+adjustLength(str(peerPORT),5))
+        peer2=dataSender(remoteip,80,"RREG"+sessionID+md5+peerIP+adjustLength(str(peerPORT),5))
         peer2.recv(4)
         print(f"il file è stato scaricato {int(peer2.recv(5).decode())} volte")
         peer2.close()
