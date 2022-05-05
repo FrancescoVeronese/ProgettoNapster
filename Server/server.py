@@ -60,7 +60,8 @@ def acceptAdd(packet):
     except mysql.connector.Error as errore:
         print("ERRORE nell'aggiunta del file:"+errore.msg)
     
-    cursor.execute("SELECT COUNT (ID_UTENTE) FROM FILE WHERE MD5=%s",MD5) #si conta quante volte il file sia presente nel DB
+    MD5tupla=(MD5)
+    cursor.execute("SELECT COUNT(*) FROM FILE WHERE MD5=%s",MD5tupla) #si conta quante volte il file sia presente nel DB
     copy=cursor.fetchall()
     copy=str(copy[0][0])
     #il sessionID presente come chiave esterna serve per eliminare tutti i file presenti nel DB appartenenti a un utente
