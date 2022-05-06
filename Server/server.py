@@ -52,8 +52,9 @@ def acceptAdd(packet): #OK#
     try:
         mydb=mysql.connector.connect(host="localhost",user="francesco",password="1",database="NAPSTERDB")
         cursor=mydb.cursor()
-        info=(MD5,fileName,sID)
-        cursor.execute("INSERT INTO FILE(MD5,NOME,ID_UTENTE) VALUES(%s,%s,%s)",info)
+        downloaded="0"
+        info=(MD5,fileName,sID,downloaded)
+        cursor.execute("INSERT INTO FILE(MD5,NOME,ID_UTENTE) VALUES(%s,%s,%s,%s)",info)
         mydb.commit()
         prettyfilename=fileName.strip()
         print(f"Il File: {prettyfilename}, con MD5 {MD5} del peer {sID} inserito nel DB\n")
@@ -157,6 +158,7 @@ def acceptLogout(packet): #OK
 
     response="ALGO"+filenum
     return response
+
 #connessione al database
 try: 
     mydb=mysql.connector.connect(host="localhost",user="francesco",password="1",database='NAPSTERDB')
@@ -164,6 +166,35 @@ try:
 except:
     print("La connessione al Database non ha avuto successo")
 
+def downloadcount(packet):
+    fileMD5=packet[20:52]
+    fileIP=packet[52:67]
+    filePORT=packet[67:72]
+    #si aggiorna il conteggio download del file scaricato dal peer
+    try:
+
+        #si seleziona il SID dell'utente con IP e porta(del proprietario del file) mandati dal peer che scarica
+        cursor=mydb.cursor()
+        userinfo=(fileIP,filePORT)
+        cursor.execute("SELECT SID FROM UTENTE WHERE IP=%s AND PORT=%s")
+        sidfileowner=cursor.fetchall()
+        sidfileowner=str(sidfileowner[0][0]).ljust(16)
+
+        cursor=mydb.cursor()
+        fileinfo=(fileMD5,sidfileowner)
+        cursor.execute("SELECT DOWNLOADED FROM FILE WHERE MD5=%s AND ID_UTENTE=%s",fileinfo)
+        downloaded=cursor.fetchall()
+        downloaded=int(downloaded[0][0])+1
+        downloaded=str(downloaded).ljust(5)
+
+        filechanged=(downloaded,fileMD5,sidfileowner)
+        cursor=mydb.cursor()
+        cursor.execute("UPDATE FILE SET DOWNLOADED=%s WHERE MD5=%s AND ID_UTENTE=%s ",filechanged)
+        mydb.commit()
+    except BaseException as err:
+        print("ERRORE %s",err.msg)
+    response="ARRE"+downloaded.ljust(5)
+    return response
 
 s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
@@ -178,25 +209,35 @@ while True:
     #si prendono i primi 4 byte(caratteri) della stringa inviata dal client, che identificano il tipo di comando inviato
     commandAction=packet[0:4]
     if(commandAction=='LOGI'):
+            print(packet)
             response=acceptLogin()
             print(f"La risposta al client è {response}")
             dataSender(response)#manda al client una stringa di 20 byte al peer 4 cmd, 16 SID #X
     else:
         if(commandAction=='ADDF'):
+            print(packet)
             response=acceptAdd(packet)
             print(f"La risposta al client è {response}")
             dataSender(response) #risponde con la conferma dell'inserimento nel DB del file,
             # e del numero di file con stesso MD5 presenti
         else:
             if(commandAction=='DELF'):
+                print(packet)
                 response=acceptRemove(packet)
                 print(f"La risposta al client è {response}")
                 dataSender(response) #risponde con la conferma della cancellazione del file
             else:
                 if(commandAction=='FIND'):
+                    print(packet)
                     response=findFile(packet)
                 else:
                     if(commandAction=='LOGO'):
                         response=acceptLogout(packet)
                         print(f"La risposta al client è {response}")
                         dataSender(response)
+                    else:
+                        if(commandAction=='RREG'):
+                            print(packet)
+                            response=downloadcount(packet)
+                            dataSender(response)
+

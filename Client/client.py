@@ -50,7 +50,7 @@ def localServer(localport,fileNameList,fileMD5List):
                 for file in fileMD5List:
                     if(MD5==file):
                         print("Il file è stato trovato\n")
-                        fileSend(peer,file) #invio file nella socket con peer del file con MD5 corrispondente
+                        fileSend(peer,file,fileNameList) #invio file nella socket con peer del file con MD5 corrispondente
                     else:
                         print("File non esistente\n")
                         response="ARET000000"
@@ -58,12 +58,18 @@ def localServer(localport,fileNameList,fileMD5List):
 
             peer.close()
             exit()
-def fileSend(socket,file):
+def fileSend(socket,file,fileNameList):
     #10 Byte, 4 ARET, 6 numero chunk
     pkt="ARET"
-    fd = os.open(file, os.O_RDONLY)
+    filename=""
+    #trovare indice del MD5 (stesso indice del corrispettivo nome file in filenamelist)
+    for x in range (0,len(fileMD5List)):
+        if(file==fileMD5List[x]):
+            filename=fileNameList[x]
+
+    fd = os.open(filename, os.O_RDONLY)
     fileDirectory=os.getcwd()
-    size=fileDirectory.getsize(file) #grandezza file
+    size=fileDirectory.getsize(filename) #grandezza file
     lastchunk=size%4096
     numchunk=size//4096  
     if(lastchunk!=0):numchunk+=1
@@ -142,9 +148,9 @@ def delFile(sessionID):
     return delstring
 
 def searchFile(sessionID):
-    searchString=str(input("Inserire stringa di ricerca: "))
+    searchString=str(input("Inserire stringa di ricerca:\n "))
     while(len(searchString)>20): #meno di 20 byte
-        searchString=str(input("Inserire stringa di ricerca: "))
+        searchString=str(input("Inserire stringa di ricerca maggiore di 20 caratteri:\n "))
     #verbo find 0-4, session id 4-20 e stringa ricerca 20-40
     searchpkt="FIND"+sessionID+searchString
     servcon=dataSender(remoteip,80,searchpkt) #invio ricerca file
@@ -167,28 +173,34 @@ def downloadFile(sessionID,md5,peerIP,peerPORT,localdir):
     peer = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     try:
         peer.connect((peerIP,int(peerPORT)))
-    except:
-        print("il server non è raggiungibile, riprova più tardi\n")
+    except BaseException as err:
+        print("il server non è raggiungibile, riprova più tardi\n %s",err.msg)
     peer.send(pkt.encode())
-    peer.recv(4)
-    pid=os.fork()
-    if(pid==0):
-        chunk=int(peer.recv(6).decode())
-        if(chunk==0):
-            print("il file è vuoto oppure non è più in condivisione\n")
-            exit()
-        if(exists(localdir+"/"+fileName)): os.remove(localdir+"/"+fileName)
-        fd = os.open(localdir+"/"+fileName, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o777)
-        for ck in range(0,chunk):
-            stream=peer.recv(int(peer.recv(5).decode()))
-            os.write(fd,stream)
-        os.close(fd)
-        peer2=dataSender(remoteip,80,"RREG"+sessionID+md5+peerIP)#alla fine adjustLength(str(peerPORT),5)
-        peer2.recv(4)
-        print(f"il file è stato scaricato {int(peer2.recv(5).decode())} volte")
-        peer2.close()
-
-        peer2.close()
+    chunknumpacket=peer.recv(10)
+    command=chunknumpacket[0:4]
+    print("%s\n",command)
+    if(command=='ARET'):
+        pid=os.fork()
+        if(pid==0):
+            chunk=int(chunknumpacket[4:10])
+            if(chunk==0):
+                print("il file è vuoto oppure non è più in condivisione\n")
+                exit()
+            if(exists(localdir+"/"+fileName)): os.remove(localdir+"/"+fileName)
+            fd = os.open(localdir+"/"+fileName, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o777)
+            for ck in range(0,chunk):
+                stream=peer.recv(peer.recv(5))
+                os.write(fd,stream)
+            os.close(fd)
+            peer2=dataSender(remoteip,80,"RREG"+sessionID.ljust(16)+md5.ljust(32)+peerIP.ljust(15)+peerPORT.ljust(5))
+            downloaded=peer2.recv(9).decode()
+            num=downloaded[4:9]
+            print(f"il file è stato scaricato{int(num)} volte")
+            peer2.close() #chiusura seconda socket legata al server
+            peer.close() #chiusura socket legata al client inviante il file
+    else:
+        print("ERRORE\n")
+        peer.close()
         exit()
 
 localdir=os.getcwd()
