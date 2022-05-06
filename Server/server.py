@@ -3,13 +3,14 @@ import socket
 from random import *
 import sys
 import mysql.connector
-from requests import Session 
+from requests import Session
+from os import fork
 
 
 
 def dataSender(send):
     conn.send(str(send).encode())
-def acceptLogin(): #OK
+def acceptLogin(packet): #OK
    
     IPAddress=packet[4:19]
     Port=packet[19:24]
@@ -52,9 +53,9 @@ def acceptAdd(packet): #OK#
     try:
         mydb=mysql.connector.connect(host="localhost",user="francesco",password="1",database="NAPSTERDB")
         cursor=mydb.cursor()
-        downloaded="0"
+        downloaded="0".ljust(5)
         info=(MD5,fileName,sID,downloaded)
-        cursor.execute("INSERT INTO FILE(MD5,NOME,ID_UTENTE) VALUES(%s,%s,%s,%s)",info)
+        cursor.execute("INSERT INTO FILE(MD5,NOME,ID_UTENTE,DOWNLOADED) VALUES(%s,%s,%s,%s)",info)
         mydb.commit()
         prettyfilename=fileName.strip()
         print(f"Il File: {prettyfilename}, con MD5 {MD5} del peer {sID} inserito nel DB\n")
@@ -199,45 +200,50 @@ def downloadcount(packet):
 s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
 s.bind(("",80))
-s.listen(10)
+s.listen(50)
 CommandAction=""
 response=""
+
 while True:
+    print("Server in ascolto...\n")
     conn,addr=s.accept()
-    packet=conn.recv(1024).decode()
-    
-    #si prendono i primi 4 byte(caratteri) della stringa inviata dal client, che identificano il tipo di comando inviato
-    commandAction=packet[0:4]
-    if(commandAction=='LOGI'):
-            print(packet)
-            response=acceptLogin()
-            print(f"La risposta al client è {response}")
-            dataSender(response)#manda al client una stringa di 20 byte al peer 4 cmd, 16 SID #X
-    else:
-        if(commandAction=='ADDF'):
-            print(packet)
-            response=acceptAdd(packet)
-            print(f"La risposta al client è {response}")
-            dataSender(response) #risponde con la conferma dell'inserimento nel DB del file,
-            # e del numero di file con stesso MD5 presenti
-        else:
-            if(commandAction=='DELF'):
-                print(packet)
-                response=acceptRemove(packet)
+    pid=fork()
+    if(pid==0):
+        packet=conn.recv(1024).decode()
+        
+        #si prendono i primi 4 byte(caratteri) della stringa inviata dal client, che identificano il tipo di comando inviato
+        commandAction=packet[0:4]
+        if(commandAction=='LOGI'): 
+                response=acceptLogin(packet)
                 print(f"La risposta al client è {response}")
-                dataSender(response) #risponde con la conferma della cancellazione del file
+                dataSender(response)#manda al client una stringa di 20 byte al peer 4 cmd, 16 SID #X
+                
+        else:
+            if(commandAction=='ADDF'):
+                
+                response=acceptAdd(packet)
+                print(f"La risposta al client è {response}")
+                dataSender(response) #risponde con la conferma dell'inserimento nel DB del file,
+                # e del numero di file con stesso MD5 presenti
+                
             else:
-                if(commandAction=='FIND'):
-                    print(packet)
-                    response=findFile(packet)
+                if(commandAction=='DELF'):
+                    
+                    response=acceptRemove(packet)
+                    print(f"La risposta al client è {response}")
+                    dataSender(response) #risponde con la conferma della cancellazione del file
                 else:
-                    if(commandAction=='LOGO'):
-                        response=acceptLogout(packet)
-                        print(f"La risposta al client è {response}")
-                        dataSender(response)
+                    if(commandAction=='FIND'):
+                        print(packet)
+                        response=findFile(packet)
                     else:
-                        if(commandAction=='RREG'):
-                            print(packet)
-                            response=downloadcount(packet)
+                        if(commandAction=='LOGO'):
+                            response=acceptLogout(packet)
+                            print(f"La risposta al client è {response}")
                             dataSender(response)
+                        else:
+                            if(commandAction=='RREG'):
+                                
+                                response=downloadcount(packet)
+                                dataSender(response)
 

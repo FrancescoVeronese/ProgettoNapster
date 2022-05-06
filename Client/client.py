@@ -158,7 +158,7 @@ def searchFile(sessionID):
     numfile=int(servstring[4:7])
 
     for n in range(0,numfile): #ogni singolo file
-        fileInfo=servcon.recv(152) #32 md5,100 filename, 15 ip, 5 porta
+        fileInfo=servcon.recv(152).decode() #32 md5,100 filename, 15 ip, 5 porta
         md5=fileInfo[0:32]
         filename=fileInfo[32:132]
         ipAddress=fileInfo[132:147]
