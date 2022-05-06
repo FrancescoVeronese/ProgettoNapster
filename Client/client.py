@@ -71,8 +71,9 @@ def fileSend(socket,file,fileNameList):
     fd = os.open(filename, os.O_RDONLY)
     print("riga 71")
     fileDirectory=os.getcwd()
+    print(fileDirectory)
     print("riga 73")
-    size=os.path.getsize(filename) #grandezza file
+    size=os.path.getsize(fileDirectory+filename) #grandezza file
     print("riga 74")
     lastchunk=size%4096
     numchunk=size//4096  
