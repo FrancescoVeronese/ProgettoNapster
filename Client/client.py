@@ -5,7 +5,6 @@ from os.path import exists
 import os,random
 import signal
 import socket, sys
-import uuid
 
 import hashlib
 
@@ -69,12 +68,14 @@ def fileSend(socket,file,fileNameList):
             filename=fileNameList[x]
     print("Il nome del file è %s\n",filename)
     fd = os.open(filename, os.O_RDONLY)
-    print("riga 71")
     fileDirectory=os.getcwd()
-    print(fileDirectory)
-    print("riga 73")
-    size=os.path.getsize(fileDirectory+filename) #grandezza file
-    print("riga 74")
+    #si trova la dimensione del file
+    files=[f for f in os.listdir(fileDirectory) if os.path.isfile(f)]
+    for f in files:
+        if(f==filename):
+            size=os.path.getsize(f)
+            print("Dimensione file:"+str(os.path.getsize(f)))
+            
     lastchunk=size%4096
     numchunk=size//4096  
     if(lastchunk!=0):numchunk+=1
@@ -84,17 +85,20 @@ def fileSend(socket,file,fileNameList):
     print("riga 82")
     for n in range(0,numchunk): #i chunk da mandare sono n
         pkt+="04096"  #invia la grandezza del chunk
-        pkt+=os.read(fd,4096) #invia le informazioni del chunk stesso
-        socket.send(pkt)
-        print("riga 87")
+        #pkt grandezza chunk in arrivo
+        socket.send(pkt.encode())
+        
+        bytes_send+=os.read(fd,4096) #invia le informazioni del chunk stesso
+        socket.send(bytes_send)
         print(pkt)
+        bytes_send=""
         pkt=""
     if(lastchunk!=0): #l'ultimo chunk con grandezza minore a 4096 viene mandato alla fine
         pkt+=adjustLength(str(lastchunk),5)
-        pkt+=os.read(fd,4096)
-        socket.send(pkt)
-        print("riga 92")
-        print(pkt)
+        #invio lunghezza chunk
+        socket.send(pkt.encode())
+        bytes_send+=os.read(fd,4096)
+        socket.send(bytes_send)
     os.close(fd)
 
 def login(localport,localip): #finito
@@ -205,14 +209,14 @@ def downloadFile(sessionID,md5,peerIP,peerPORT,localdir):
             if(exists(localdir+"/"+fileName)): os.remove(localdir+"/"+fileName)
             fd = os.open(localdir+"/"+fileName, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o777)
             for ck in range(0,chunk):
-                stream=peer.recv(peer.recv(5))
-                print(stream)
+                stream=peer.recv(int(peer.recv(5).decode()))
                 os.write(fd,stream)
             os.close(fd)
+            print("Il file è stato scaricato con successo\n")
             peer2=dataSender(remoteip,80,"RREG"+sessionID.ljust(16)+md5.ljust(32)+peerIP.ljust(15)+peerPORT.ljust(5))
             downloaded=peer2.recv(9).decode()
             num=downloaded[4:9]
-            print(f"il file è stato scaricato{int(num)} volte")
+            print(f"il file è stato scaricato in totale{int(num)} volte")
             peer2.close() #chiusura seconda socket legata al server
             peer.close() #chiusura socket legata al client inviante il file
     else:
