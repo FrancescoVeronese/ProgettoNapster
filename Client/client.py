@@ -1,3 +1,4 @@
+from genericpath import getsize
 import threading
 from pathlib import Path
 from os.path import exists
@@ -66,10 +67,10 @@ def fileSend(socket,file,fileNameList):
     for x in range (0,len(fileMD5List)):
         if(file==fileMD5List[x]):
             filename=fileNameList[x]
-
+    print("Il nome del file è %s\n",filename)
     fd = os.open(filename, os.O_RDONLY)
     fileDirectory=os.getcwd()
-    size=fileDirectory.getsize(filename) #grandezza file
+    size=os.path.getsize(filename) #grandezza file
     lastchunk=size%4096
     numchunk=size//4096  
     if(lastchunk!=0):numchunk+=1
@@ -91,7 +92,7 @@ def login(localport,localip): #finito
     localport=str(localport)#porta da cui il client si metterà in ascolto per ricevere richieste download
     _localip=thisHost(localip)
     #stringa di risposta
-    response="LOGI"+localip.ljust(15)+localport.ljust(5)
+    response="LOGI"+_localip.ljust(15)+localport.ljust(5)
     print(localip)
     print(localport)
     servcon=dataSender(remoteip,80,response) #invio stringa login

@@ -50,8 +50,6 @@ def acceptAdd(packet): #OK#
     MD5=packet[20:52]
     fileName=packet[52:152]
     try:
-        mydb=mysql.connector.connect(host="localhost",user="francesco",password="1",database="NAPSTERDB")
-        
         downloaded="0".ljust(5)
         info=(MD5,fileName,sID,downloaded)
         cursor.execute("INSERT INTO FILE(MD5,NOME,ID_UTENTE,DOWNLOADED) VALUES(%s,%s,%s,%s)",info)
@@ -75,21 +73,28 @@ def acceptRemove(packet):#OK
     MD5=packet[20:52]
     print(packet)
     removeinfo=(sID,MD5)
+    print("riga 78")
     try:
-        
+        print("riga 80")
         cursor.execute("SELECT COUNT(*) FROM FILE WHERE ID_UTENTE=%s AND MD5=%s",removeinfo)
-        deletedfiles=cursor.fetchall()
-        directory=str(deletedfiles[0][0]).ljust(3)
+        print("riga 82")
+        deletedfiles=cursor.fetchall()[0][0]
+        print("riga 83")
+        directory=str(deletedfiles).ljust(3)
+        print("riga 85")
+        print(directory)
     except BaseException as erro:
         print("Errore calcolo numero file cancellati: %s",erro.msg)
 
     try:
-        
+        print("riga 89")
         cursor.execute("DELETE FROM FILE WHERE ID_UTENTE=%s AND MD5=%s",removeinfo)
+        print("riga 91")
         mydb.commit()
     except BaseException as err:
         print("Errore cancellazione file: %s",err.msg)
     response="ADEL"+directory
+    print("riga 96")
     return response
     
 def findFile(packet):
@@ -230,10 +235,12 @@ while True:
                 
             else:
                 if(commandAction=='DELF'):
-                    
+                    print("PACCHETTO ARRIVATO")
                     response=acceptRemove(packet)
+                    print("PACCHETTO CREATO")
                     print(f"La risposta al client è {response}")
                     dataSender(response) #risponde con la conferma della cancellazione del file
+                    print("PACCHETTO INVIATO")
                 else:
                     if(commandAction=='FIND'):
                         print(packet)
