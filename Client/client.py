@@ -69,23 +69,31 @@ def fileSend(socket,file,fileNameList):
             filename=fileNameList[x]
     print("Il nome del file è %s\n",filename)
     fd = os.open(filename, os.O_RDONLY)
+    print("riga 71")
     fileDirectory=os.getcwd()
+    print("riga 73")
     size=os.path.getsize(filename) #grandezza file
+    print("riga 74")
     lastchunk=size%4096
     numchunk=size//4096  
     if(lastchunk!=0):numchunk+=1
     pkt+=adjustLength(str(numchunk),6)
     socket.send(pkt.encode()) #invia al peer numero di chunk
     pkt=""  #singolo chunk
+    print("riga 82")
     for n in range(0,numchunk): #i chunk da mandare sono n
         pkt+="04096"  #invia la grandezza del chunk
         pkt+=os.read(fd,4096) #invia le informazioni del chunk stesso
         socket.send(pkt)
+        print("riga 87")
+        print(pkt)
         pkt=""
     if(lastchunk!=0): #l'ultimo chunk con grandezza minore a 4096 viene mandato alla fine
         pkt+=adjustLength(str(lastchunk),5)
         pkt+=os.read(fd,4096)
         socket.send(pkt)
+        print("riga 92")
+        print(pkt)
     os.close(fd)
 
 def login(localport,localip): #finito
@@ -182,7 +190,8 @@ def downloadFile(sessionID,md5,peerIP,peerPORT,localdir):
     except BaseException as err:
         print("il server non è raggiungibile, riprova più tardi\n %s",err.msg)
     peer.send(pkt.encode())
-    chunknumpacket=peer.recv(10)
+    chunknumpacket=peer.recv(10).decode()
+    print(chunknumpacket)
     command=chunknumpacket[0:4]
     print("%s\n",command)
     if(command=='ARET'):
@@ -196,6 +205,7 @@ def downloadFile(sessionID,md5,peerIP,peerPORT,localdir):
             fd = os.open(localdir+"/"+fileName, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o777)
             for ck in range(0,chunk):
                 stream=peer.recv(peer.recv(5))
+                print(stream)
                 os.write(fd,stream)
             os.close(fd)
             peer2=dataSender(remoteip,80,"RREG"+sessionID.ljust(16)+md5.ljust(32)+peerIP.ljust(15)+peerPORT.ljust(5))
