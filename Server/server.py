@@ -73,10 +73,10 @@ def acceptAdd(packet): #OK#
 def acceptRemove(packet):#OK
     sID=packet[4:20]
     MD5=packet[20:52]
-
+    print(packet)
     removeinfo=(sID,MD5)
     try:
-        cursor=mydb.cursor()
+        
         cursor.execute("SELECT COUNT(*) FROM FILE WHERE ID_UTENTE=%s AND MD5=%s",removeinfo)
         deletedfiles=cursor.fetchall()
         directory=str(deletedfiles[0][0]).ljust(3)
@@ -84,7 +84,7 @@ def acceptRemove(packet):#OK
         print("Errore calcolo numero file cancellati: %s",erro.msg)
 
     try:
-        cursor=mydb.cursor()
+        
         cursor.execute("DELETE FROM FILE WHERE ID_UTENTE=%s AND MD5=%s",removeinfo)
         mydb.commit()
     except BaseException as err:

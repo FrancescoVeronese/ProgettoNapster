@@ -142,7 +142,7 @@ def delFile(sessionID):
     while(len(nameFile)>100):#accettare solo nomi di file minori di 100 caratteri(byte)
         nameFile = input("Scrivere nome file ")
     md5 = MD5generator(nameFile)
-    delstring="DELF"+str(sessionID)+str(md5)
+    delstring="DELF"+str(sessionID).ljust(16)+str(md5).ljust(32)
     servcon=dataSender(remoteip,80,delstring) #aggiunta al server
     servstring=servcon.recv(1024).decode()
     servcon.close()
