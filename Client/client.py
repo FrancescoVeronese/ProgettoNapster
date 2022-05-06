@@ -17,7 +17,7 @@ def conn_close(signal,frame):
 def thisHost(localip):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
-    ip=localip.ljust(15)
+    ip=localip
     s.close()
     return str(ip)
 def adjustLength(stringa, dim):
@@ -91,7 +91,7 @@ def login(localport,localip): #finito
     localport=str(localport)#porta da cui il client si metterà in ascolto per ricevere richieste download
     _localip=thisHost(localip)
     #stringa di risposta
-    response="LOGI"+localip+localport
+    response="LOGI"+localip.ljust(15)+localport.ljust(5)
     print(localip)
     print(localport)
     servcon=dataSender(remoteip,80,response) #invio stringa login
