@@ -14,10 +14,10 @@ def conn_close(signal,frame):
     logout(sessionID)
 
 
-def thisHost():
+def thisHost(localip):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
-    ip=s.getsockname()[0]
+    ip=localip.ljust(15)
     s.close()
     return str(ip)
 def adjustLength(stringa, dim):
@@ -87,9 +87,9 @@ def fileSend(socket,file,fileNameList):
         socket.send(pkt)
     os.close(fd)
 
-def login(localport): #finito
+def login(localport,localip): #finito
     localport=str(localport)#porta da cui il client si metterà in ascolto per ricevere richieste download
-    localip=thisHost().ljust(15)
+    _localip=thisHost(localip)
     #stringa di risposta
     response="LOGI"+localip+localport
     print(localip)
@@ -212,8 +212,9 @@ localdir=os.getcwd()
 sessionID=""
 recvpacket=""
 remoteip=str(sys.argv[1])
+localip=str(sys.argv[2])
 listenport=random.randint(50000,60000) #porta d acui il client ascolta per eventuali richieste di file dai peer
-recvpacket=login(listenport)
+recvpacket=login(listenport,localip)
 sessionID=recvpacket[4:20]
 if(sessionID=="0000000000000000"):
     print("ERRORE LOGIN")

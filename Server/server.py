@@ -11,10 +11,10 @@ from os import fork
 def dataSender(send):
     conn.send(str(send).encode())
 def acceptLogin(packet): #OK
-   
+    print(packet)
     IPAddress=packet[4:19]
     Port=packet[19:24]
-    
+    #bisogna inserire se il sid è uguale che ritenti di generarlo
     alphabet="abcdefghijklmnopqrstuvwxyz"
     sessionID="" 
     #generare una stringa di 16 caratteri con valori alfanumerici
@@ -33,7 +33,6 @@ def acceptLogin(packet): #OK
     print(f"IL SID GENERATO è {sessionID}\n")
     try:
         valori=(sessionID,str(IPAddress),str(Port))
-        
         cursor.execute("INSERT INTO UTENTE(SID,IP,PORT) VALUES (%s,%s,%s)",valori)
         mydb.commit()
         print(f"Utente %s connesso, da porta %s\n",IPAddress,Port)
