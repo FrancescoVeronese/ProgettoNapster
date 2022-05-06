@@ -96,6 +96,7 @@ def login(localport): #finito
     print(localport)
     servcon=dataSender(remoteip,80,response) #invio stringa login
     packet=servcon.recv(1024).decode()
+    servcon.close()
     return packet
         
 def logout(sessionID):
@@ -103,6 +104,7 @@ def logout(sessionID):
     response="LOGO"+sessionID
     servcon=dataSender(remoteip,80,response)
     logoutstring=servcon.recv(1024).decode()
+    servcon.close()
     verb=logoutstring[0:4]
     filenum=logoutstring[4:7] #numero di file rimossi
     print("\n"+verb+" I file rimossi dal DB del server sono"+filenum)
@@ -129,6 +131,7 @@ def addFile(sessionID):
     addstring="ADDF"+str(sessionID)+str(md5)+str(nameFile_send)
     servcon=dataSender(remoteip,80,addstring) #aggiunta al server
     servstring=servcon.recv(1024).decode()
+    servcon.close()
     verb=servstring[0:4]
     filenum=servstring[4:7] #versioni del file presenti nel DB con stesso MD5
     print(verb, "Il numero di file inseriti con stesso MD5 è ",filenum)
@@ -142,6 +145,7 @@ def delFile(sessionID):
     delstring="DELF"+str(sessionID)+str(md5)
     servcon=dataSender(remoteip,80,delstring) #aggiunta al server
     servstring=servcon.recv(1024).decode()
+    servcon.close()
     verb=servstring[0:4]
     filenum=servstring[4:7] #quante versioni del file erano presenti nel DB
     print(verb,"Il numero di file eliminati con stesso MD5 è",filenum)
@@ -165,6 +169,7 @@ def searchFile(sessionID):
         port=fileInfo[147:152]
         peer=(ipAddress,port,filename,md5)
         print("L'utente %s:%s,\n ha il file con nome:%s e MD5 %s",peer)
+    servcon.close()
     return 0
 def downloadFile(sessionID,md5,peerIP,peerPORT,localdir):
     print("Inserisci il nome del file da salvare ")

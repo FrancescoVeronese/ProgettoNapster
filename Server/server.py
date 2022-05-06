@@ -33,7 +33,7 @@ def acceptLogin(packet): #OK
     print(f"IL SID GENERATO è {sessionID}\n")
     try:
         valori=(sessionID,str(IPAddress),str(Port))
-        cursor=mydb.cursor()
+        
         cursor.execute("INSERT INTO UTENTE(SID,IP,PORT) VALUES (%s,%s,%s)",valori)
         mydb.commit()
         print(f"Utente %s connesso, da porta %s\n",IPAddress,Port)
@@ -52,7 +52,7 @@ def acceptAdd(packet): #OK#
     fileName=packet[52:152]
     try:
         mydb=mysql.connector.connect(host="localhost",user="francesco",password="1",database="NAPSTERDB")
-        cursor=mydb.cursor()
+        
         downloaded="0".ljust(5)
         info=(MD5,fileName,sID,downloaded)
         cursor.execute("INSERT INTO FILE(MD5,NOME,ID_UTENTE,DOWNLOADED) VALUES(%s,%s,%s,%s)",info)
@@ -160,12 +160,7 @@ def acceptLogout(packet): #OK
     response="ALGO"+filenum
     return response
 
-#connessione al database
-try: 
-    mydb=mysql.connector.connect(host="localhost",user="francesco",password="1",database='NAPSTERDB')
-    cursor=mydb.cursor()
-except:
-    print("La connessione al Database non ha avuto successo")
+
 
 def downloadcount(packet):
     fileMD5=packet[20:52]
@@ -197,6 +192,8 @@ def downloadcount(packet):
     response="ARRE"+downloaded.ljust(5)
     return response
 
+mydb=0
+cursor=0
 s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
 s.bind(("",80))
@@ -209,8 +206,14 @@ while True:
     conn,addr=s.accept()
     pid=fork()
     if(pid==0):
-        packet=conn.recv(1024).decode()
+        #connessione al database
+        try: 
+            mydb=mysql.connector.connect(host="localhost",user="francesco",password="1",database='NAPSTERDB')
+            cursor=mydb.cursor()
+        except:
+            print("La connessione al Database non ha avuto successo")
         
+        packet=conn.recv(1024).decode() 
         #si prendono i primi 4 byte(caratteri) della stringa inviata dal client, che identificano il tipo di comando inviato
         commandAction=packet[0:4]
         if(commandAction=='LOGI'): 
