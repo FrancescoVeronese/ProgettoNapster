@@ -207,8 +207,8 @@ def downloadFile(sessionID,md5,peerIP,peerPORT,localdir):
             if(chunk==0):
                 print("il file è vuoto oppure non è più in condivisione\n")
                 exit()
-            if(exists(localdir+"/"+fileName)): os.remove(localdir+"/"+fileName)
-            fd = os.open(localdir+"/"+fileName, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o777)
+            if(exists("downloaded"+"/"+fileName)): os.remove("downloaded"+"/"+fileName)
+            fd = os.open("downloaded"+"/"+fileName, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o777)
             ck=0
             for ck in range(0,chunk):
                 stream=peer.recv(int(peer.recv(5).decode()))
