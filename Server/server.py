@@ -88,7 +88,6 @@ def acceptRemove(packet):#OK
     except BaseException as err:
         print("Errore cancellazione file: %s",err.msg)
     response="ADEL"+directory
-    print("riga 96")
     return response
     
 def findFile(packet):

@@ -79,25 +79,24 @@ def fileSend(socket,file,fileNameList):
     lastchunk=size%4096
     numchunk=size//4096  
     if(lastchunk!=0):numchunk+=1
-    pkt+=adjustLength(str(numchunk),6)
+    pkt=str(numchunk).ljust(6)
     socket.send(pkt.encode()) #invia al peer numero di chunk
     pkt=""  #singolo chunk
-    print("riga 82")
+
     for n in range(0,numchunk): #i chunk da mandare sono n
         pkt+="04096"  #invia la grandezza del chunk
         #pkt grandezza chunk in arrivo
         socket.send(pkt.encode())
         
-        bytes_send+=os.read(fd,4096) #invia le informazioni del chunk stesso
+        bytes_send=os.read(fd,4096) #invia le informazioni del chunk stesso
         socket.send(bytes_send)
-        print(pkt)
         bytes_send=""
         pkt=""
     if(lastchunk!=0): #l'ultimo chunk con grandezza minore a 4096 viene mandato alla fine
-        pkt+=adjustLength(str(lastchunk),5)
+        pkt+=str(lastchunk).ljust(5)
         #invio lunghezza chunk
         socket.send(pkt.encode())
-        bytes_send+=os.read(fd,4096)
+        bytes_send=os.read(fd,4096)
         socket.send(bytes_send)
     os.close(fd)
 
