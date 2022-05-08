@@ -48,9 +48,11 @@ def localServer(localport,fileNameList,fileMD5List):
             if(verb=="RETR"):
                 MD5=request[4:36]
                 found=0
+                file=""
                 for file in fileMD5List:
                     if(MD5==file):
-                        found=found+1 #invio file nella socket con peer del file con MD5 corrispondente
+                        found=found+1
+                        break #invio file nella socket con peer del file con MD5 corrispondente
                 if(found==0):#se il file non è stato trovato
                     print("File cercato non esistente\n")
                     response="ARET000000"
@@ -68,6 +70,7 @@ def fileSend(socket,file,fileNameList):
     for x in range (0,len(fileMD5List)):
         if(file==fileMD5List[x]):
             filename=fileNameList[x]
+            break
     print("Il nome del file è %s\n",filename)
     fd = os.open(filename, os.O_RDONLY)
     fileDirectory=os.getcwd()
