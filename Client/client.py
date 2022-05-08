@@ -92,8 +92,6 @@ def fileSend(socket,file,fileNameList):
         print(pkt)
         bytes_send=os.read(fd,4096) #invia le informazioni del chunk stesso
         socket.send(bytes_send)
-        bytes_send=""
-        pkt=""
     if(lastchunk!=0): #l'ultimo chunk con grandezza minore a 4096 viene mandato alla fine
         pkt=str(lastchunk).ljust(5)
         #invio lunghezza chunk
@@ -207,8 +205,8 @@ def downloadFile(sessionID,md5,peerIP,peerPORT,localdir):
             if(chunk==0):
                 print("il file è vuoto oppure non è più in condivisione\n")
                 exit()
-            if(exists("downloaded"+"/"+fileName)): os.remove("downloaded"+"/"+fileName)
-            fd = os.open("downloaded"+"/"+fileName, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o777)
+            if(exists(localdir+"/"+fileName)): os.remove(localdir+"/"+fileName)
+            fd = os.open(localdir+"/"+fileName, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o777)
             ck=0
             for ck in range(0,chunk):
                 stream=peer.recv(int(peer.recv(5).decode()))
