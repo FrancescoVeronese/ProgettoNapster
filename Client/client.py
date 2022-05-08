@@ -88,7 +88,7 @@ def fileSend(socket,file,fileNameList):
     socket.send(pkt.encode()) #invia al peer numero di chunk
     pkt=""  #singolo chunk
 
-    for n in range(0,numchunk): #i chunk da mandare sono n
+    for n in range(0,size//4096): #i chunk da mandare sono n
         pkt="04096"  #invia la grandezza del chunk
         #pkt grandezza chunk in arrivo
         socket.send(pkt.encode())
