@@ -81,21 +81,21 @@ def fileSend(socket,file,fileNameList):
     lastchunk=size%4096
     numchunk=size//4096  
     if(lastchunk!=0):numchunk+=1
-    pkt=str(numchunk).ljust(6)
+    pkt+=str(numchunk).ljust(6)
     socket.send(pkt.encode()) #invia al peer numero di chunk
     pkt=""  #singolo chunk
 
     for n in range(0,numchunk): #i chunk da mandare sono n
-        pkt+="04096"  #invia la grandezza del chunk
+        pkt="04096"  #invia la grandezza del chunk
         #pkt grandezza chunk in arrivo
         socket.send(pkt.encode())
-        
+        print(pkt)
         bytes_send=os.read(fd,4096) #invia le informazioni del chunk stesso
         socket.send(bytes_send)
         bytes_send=""
         pkt=""
     if(lastchunk!=0): #l'ultimo chunk con grandezza minore a 4096 viene mandato alla fine
-        pkt+=str(lastchunk).ljust(5)
+        pkt=str(lastchunk).ljust(5)
         #invio lunghezza chunk
         socket.send(pkt.encode())
         bytes_send=os.read(fd,4096)
@@ -209,6 +209,7 @@ def downloadFile(sessionID,md5,peerIP,peerPORT,localdir):
                 exit()
             if(exists(localdir+"/"+fileName)): os.remove(localdir+"/"+fileName)
             fd = os.open(localdir+"/"+fileName, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o777)
+            ck=0
             for ck in range(0,chunk):
                 stream=peer.recv(int(peer.recv(5).decode()))
                 os.write(fd,stream)
